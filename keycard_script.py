@@ -51,12 +51,12 @@ def close_usb():
     print("[OK] USB closed")
 
 
-def create_card(hotel_id, card_no, begin_time, end_time, room_no):
+def create_card(hotel_id, card_no, checkin_time, checkout_time, room_no):
     dai, LLock, pdoors = 0, 1, 0
     card_hex = create_string_buffer(200)
     res = sdk.GuestCard(
         1, hotel_id, card_no, dai, LLock, pdoors,
-        begin_time.encode(), end_time.encode(),
+        checkin_time.encode(), checkout_time.encode(),
         room_no.encode(), card_hex
     )
     if res == 0:
@@ -80,11 +80,11 @@ async def api_create_card(request: Request):
     data = await request.json()
     hotel_id = data.get("hotel_id")
     card_no = data.get("card_no")
-    begin_time = data.get("begin_time")
-    end_time = data.get("end_time")
+    checkin_time = data.get("checkin_time")
+    checkout_time = data.get("checkout_time")
     room_no = data.get("room_no")
 
-    if not all([hotel_id, card_no, begin_time, end_time, room_no]):
+    if not all([hotel_id, card_no, checkin_time, checkout_time, room_no]):
         raise HTTPException(status_code=400, detail="Missing required parameters")
 
     if not init_usb():
