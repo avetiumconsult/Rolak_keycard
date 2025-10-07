@@ -90,7 +90,7 @@ async def api_create_card(request: Request):
     if not init_usb():
         raise HTTPException(status_code=500, detail="USB initialization failed")
 
-    result = create_card(int(hotel_id), int(card_no), begin_time, end_time, room_no)
+    result = create_card(int(hotel_id), int(card_no), checkin_time, checkout_time, room_no)
     close_usb()
     return result
 
