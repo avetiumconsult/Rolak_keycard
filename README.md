@@ -146,7 +146,7 @@ Example:
 
 ```
 Flask==3.0.3
-python_version == "3.11.8-32bit"
+python_version == "3.13.6-32bit"
 ```
 
 > 🧩 Include your Python architecture (32-bit) in documentation for compatibility assurance.
