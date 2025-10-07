@@ -23,7 +23,7 @@ It integrates seamlessly with physical keycard encoders and hotel property manag
 
 ## 📦 Tech Stack
 
-- **Language:** Python 3.11 (32-bit)  
+- **Language:** Python 3.13.6 (32-bit)  
 - **Framework:** Flask  
 - **Runtime:** venv32 (Virtual Environment)  
 - **API Testing:** Postman / cURL
