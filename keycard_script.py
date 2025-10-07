@@ -1,121 +1,121 @@
+from fastapi import FastAPI, HTTPException, Request
 import ctypes
 from ctypes import c_int, c_ubyte, create_string_buffer
+import uvicorn
 
-# Load the DLL
-sdk = ctypes.WinDLL("C:\\Users\\chinedu.orjiogo\\Documents\\Rolak_keycard\\proRFL.dll")
-if not sdk:
-    raise Exception("Failed to load DLL")
-print(f"DLL loaded successfully from {sdk._name}")
+app = FastAPI(title="ProRFL SDK Agent")
 
-# -------------------------------
+# Load the SDK DLL
+try:
+    sdk = ctypes.WinDLL(r"C:\Users\chinedu.orjiogo\Documents\Rolak_keycard\proRFL.dll")
+    print(f"[OK] DLL loaded successfully from {sdk._name}")
+except Exception as e:
+    raise Exception(f"Failed to load DLL: {e}")
+
 # Map SDK functions
-# -------------------------------
-
-# int __stdcall GetDLLVersion(uchar* bufVer)
 sdk.GetDLLVersion.argtypes = [ctypes.c_char_p]
 sdk.GetDLLVersion.restype = c_int
 
-# int __stdcall initializeUSB(uchar d12)
 sdk.initializeUSB.argtypes = [c_ubyte]
 sdk.initializeUSB.restype = c_int
 
-# void __stdcall CloseUSB(uchar d12)
 sdk.CloseUSB.argtypes = [c_ubyte]
 sdk.CloseUSB.restype = None
 
-# int __stdcall Buzzer(uchar d12, unsigned char t)
 sdk.Buzzer.argtypes = [c_ubyte, c_ubyte]
 sdk.Buzzer.restype = c_int
 
-# int __stdcall GuestCard(...)
 sdk.GuestCard.argtypes = [
-    c_ubyte,      # d12 (1 = proUSB)
-    c_int,        # dlsCoID
-    c_ubyte,      # CardNo
-    c_ubyte,      # dai
-    c_ubyte,      # LLock
-    c_ubyte,      # pdoors
-    ctypes.c_char_p,  # BDate[10]
-    ctypes.c_char_p,  # EDate[10]
-    ctypes.c_char_p,  # LockNo[8]
-    ctypes.c_char_p   # cardHexStr (output buffer)
+    c_ubyte, c_int, c_ubyte, c_ubyte, c_ubyte, c_ubyte,
+    ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p
 ]
 sdk.GuestCard.restype = c_int
 
-# int __stdcall CardErase(uchar d12, int dlsCoID, unsigned char* cardHexStr)
 sdk.CardErase.argtypes = [c_ubyte, c_int, ctypes.c_char_p]
 sdk.CardErase.restype = c_int
 
 
-# --------------------------------------------------------
-# Utility functions
-# --------------------------------------------------------
-
+# Utility wrappers
 def init_usb():
-    """Initialize USB connection to encoder"""
-    result = sdk.initializeUSB(1)
-    if result == 0:
+    res = sdk.initializeUSB(1)
+    if res == 0:
         print("[OK] USB initialized")
+        return True
     else:
-        print(f"[ERROR]: USB init failed (code={result})")
-    return result
+        print(f"[ERROR] USB init failed (code={res})")
+        return False
+
 
 def close_usb():
-    """Close USB connection"""
     sdk.CloseUSB(1)
     print("[OK] USB closed")
 
-def create_card(hotel_id, card_no, begin_time, end_time, room_no):
-    """
-    Issue a customer keycard.
-    begin_time / end_time format: YYMMDDHHmm
-    room_no: 8-digit string, e.g. "00001234"
-    """
-    dai = 0
-    LLock = 1   # allow door lock
-    pdoors = 0
-    card_hex = create_string_buffer(200)
 
+def create_card(hotel_id, card_no, begin_time, end_time, room_no):
+    dai, LLock, pdoors = 0, 1, 0
+    card_hex = create_string_buffer(200)
     res = sdk.GuestCard(
         1, hotel_id, card_no, dai, LLock, pdoors,
         begin_time.encode(), end_time.encode(),
         room_no.encode(), card_hex
     )
-
     if res == 0:
-        print("[OK] Card created successfully")
-        print("Card Data:", card_hex.value.decode(errors="ignore"))
-        return card_hex.value.decode(errors="ignore")
+        return {"status": "success", "card_data": card_hex.value.decode(errors="ignore")}
     else:
-        print(f"[ERROR] Card creation failed (code={res})")
-        return None
+        return {"status": "error", "code": res}
+
 
 def delete_card(hotel_id, card_hex_str):
-    """Erase or invalidate a customer keycard"""
     res = sdk.CardErase(1, hotel_id, card_hex_str.encode())
     if res == 0:
-        print("[OK] Card deleted successfully")
+        return {"status": "success"}
     else:
-        print(f"[ERROR] Card deletion failed (code={res})")
-    return res
+        return {"status": "error", "code": res}
 
 
-# --------------------------------------------------------
-# Example usage
-# --------------------------------------------------------
+# ------------------ API Routes ------------------
+
+@app.post("/create_card")
+async def api_create_card(request: Request):
+    data = await request.json()
+    hotel_id = data.get("hotel_id")
+    card_no = data.get("card_no")
+    begin_time = data.get("begin_time")
+    end_time = data.get("end_time")
+    room_no = data.get("room_no")
+
+    if not all([hotel_id, card_no, begin_time, end_time, room_no]):
+        raise HTTPException(status_code=400, detail="Missing required parameters")
+
+    if not init_usb():
+        raise HTTPException(status_code=500, detail="USB initialization failed")
+
+    result = create_card(int(hotel_id), int(card_no), begin_time, end_time, room_no)
+    close_usb()
+    return result
+
+
+@app.post("/delete_card")
+async def api_delete_card(request: Request):
+    data = await request.json()
+    hotel_id = data.get("hotel_id")
+    card_data = data.get("card_data")
+
+    if not all([hotel_id, card_data]):
+        raise HTTPException(status_code=400, detail="Missing required parameters")
+
+    if not init_usb():
+        raise HTTPException(status_code=500, detail="USB initialization failed")
+
+    result = delete_card(int(hotel_id), card_data)
+    close_usb()
+    return result
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok", "message": "SDK Agent is running"}
+
+
 if __name__ == "__main__":
-    if init_usb() == 0:
-        # Example: Create a card
-        card_data = create_card(
-            hotel_id=1234,
-            card_no=1,
-            begin_time="2509181200",  # YYMMDDHHmm
-            end_time="2509201100",
-            room_no="00001234"
-        )
-
-        if card_data:
-            # Example: Delete the same card
-            delete_card(1234, card_data)
-
-        close_usb()
+    uvicorn.run(app, host="0.0.0.0", port=5000)
