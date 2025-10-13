@@ -113,37 +113,58 @@ async def api_create_card(request: Request):
     if not init_usb():
         raise HTTPException(status_code=500, detail="USB initialization failed")
 
-    result = create_card(int(hotel_id), int(card_no), checkin_time, checkout_time, room_no)
-    close_usb()
-    if result["status"] == "success":
-        # Store card info in the database
-        cards_collection.insert_one({
-            "hotel_id": hotel_id,
-            "card_no": card_no,
-            "checkin_time": checkin_time,
-            "checkout_time": checkout_time,
-            "room_no": room_no,
-            "card_hex": result["card_data"]
-        })
-        return {"status": "success", "message": "Card creation successful", "card_data": result.get("card_data")}
-    else:
-        raise HTTPException(status_code=500, detail=f"Card creation failed (code={result.get('code')})")
+    try:
+        result = create_card(int(hotel_id), int(card_no), checkin_time, checkout_time, room_no)
+        if result["status"] == "success":
+            # Store card info in the database
+            cards_collection.insert_one({
+                "hotel_id": hotel_id,
+                "card_no": card_no,
+                "checkin_time": checkin_time,
+                "checkout_time": checkout_time,
+                "room_no": room_no,
+                "card_hex": result["card_data"]
+            })
+            return {"status": "success", "message": "Card creation successful", "card_data": result.get("card_data")}
+        else:
+            raise HTTPException(status_code=500, detail=f"Card creation failed (code={result.get('code')})")
+    finally:
+        close_usb()
 
 @app.post("/delete_card")
 async def api_delete_card(request: Request):
+    """
+    Delete an existing keycard for a hotel guest.
+
+    Parameters:
+        request (Request): The HTTP request containing JSON with the following fields:
+            - hotel_id (int): The unique identifier for the hotel.
+            - card_data (str): The encoded card data of the card to be deleted.
+    """
     data = await request.json()
     hotel_id = data.get("hotel_id")
     card_data = data.get("card_data")
 
-    if not all([hotel_id, card_data]):
+    if any(x is None for x in [hotel_id, card_data]):
         raise HTTPException(status_code=400, detail="Missing required parameters")
+
+    # Validate that card_data is a valid hex string
+    try:
+        bytes.fromhex(card_data)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid card_data: must be a valid hex string")
 
     if not init_usb():
         raise HTTPException(status_code=500, detail="USB initialization failed")
 
-    result = delete_card(int(hotel_id), card_data)
-    close_usb()
-    return result
+    try:
+        result = delete_card(int(hotel_id), card_data)
+        if result["status"] == "success":
+            return {"status": "success", "message": "Card deletion successful"}
+        else:
+            raise HTTPException(status_code=500, detail=f"Card deletion failed (code={result.get('code')})")
+    finally:
+        close_usb()
 
 
 @app.get("/health")
