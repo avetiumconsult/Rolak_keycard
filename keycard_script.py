@@ -2,6 +2,12 @@ from fastapi import FastAPI, HTTPException, Request
 import ctypes
 from ctypes import c_int, c_ubyte, create_string_buffer
 import uvicorn
+from mongodb import connect_to_database
+
+# initialize the database connection
+db_client = connect_to_database()
+db = db_client['keycard_db']
+cards_collection = db['cards']
 
 app = FastAPI(title="ProRFL SDK Agent")
 
@@ -77,6 +83,23 @@ def delete_card(hotel_id, card_hex_str):
 
 @app.post("/create_card")
 async def api_create_card(request: Request):
+    """
+    Create a new keycard for a hotel guest.
+
+    Parameters:
+        request (Request): The HTTP request containing JSON with the following fields:
+            - hotel_id (int): The unique identifier for the hotel.
+            - card_no (int): The card number to be assigned.
+            - checkin_time (str): The check-in time in string format.
+            - checkout_time (str): The check-out time in string format.
+            - room_no (str): The room number assigned to the guest.
+
+    Returns:
+        JSON response with:
+            - status (str): "success" if card creation is successful, otherwise "error".
+            - message (str): Description of the operation result.
+            - card_data (str, optional): The encoded card data if successful.
+    """
     data = await request.json()
     hotel_id = data.get("hotel_id")
     card_no = data.get("card_no")
@@ -84,7 +107,7 @@ async def api_create_card(request: Request):
     checkout_time = data.get("checkout_time")
     room_no = data.get("room_no")
 
-    if not all([hotel_id, card_no, checkin_time, checkout_time, room_no]):
+    if any(x is None for x in [hotel_id, card_no, checkin_time, checkout_time, room_no]):
         raise HTTPException(status_code=400, detail="Missing required parameters")
 
     if not init_usb():
@@ -92,8 +115,19 @@ async def api_create_card(request: Request):
 
     result = create_card(int(hotel_id), int(card_no), checkin_time, checkout_time, room_no)
     close_usb()
-    return result
-
+    if result["status"] == "success":
+        # Store card info in the database
+        cards_collection.insert_one({
+            "hotel_id": hotel_id,
+            "card_no": card_no,
+            "checkin_time": checkin_time,
+            "checkout_time": checkout_time,
+            "room_no": room_no,
+            "card_hex": result["card_data"]
+        })
+        return {"status": "success", "message": "Card creation successful", "card_data": result.get("card_data")}
+    else:
+        raise HTTPException(status_code=500, detail=f"Card creation failed (code={result.get('code')})")
 
 @app.post("/delete_card")
 async def api_delete_card(request: Request):
