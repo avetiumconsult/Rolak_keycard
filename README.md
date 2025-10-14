@@ -24,7 +24,7 @@ It integrates seamlessly with physical keycard encoders and hotel property manag
 ## 📦 Tech Stack
 
 - **Language:** Python 3.13.6 (32-bit)  
-- **Framework:** Flask  
+- **Framework:** FastAPI  
 - **Runtime:** venv32 (Virtual Environment)  
 - **API Testing:** Postman / cURL
 
@@ -62,8 +62,8 @@ pip install -r requirements.txt
 Update your `.env` or environment variables if required (e.g., encoder paths, serial ports, etc.):
 
 ```bash
-FLASK_APP=app.py
-FLASK_ENV=development
+FASTAPI_APP=keycard_sript.py
+FASTAPI_ENV=development
 ```
 
 ---
@@ -145,7 +145,7 @@ Creates a new keycard for a given hotel room.
 Example:
 
 ```
-Flask==3.0.3
+FastApi==3.0.3
 python_version == "3.13.6-32bit"
 ```
 
