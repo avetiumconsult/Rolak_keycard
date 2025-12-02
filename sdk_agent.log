@@ -115,3 +115,29 @@
 2025-10-14 12:28:52,599 [INFO] [MainThread] REQ-16924: Waiting to acquire SDK lock...
 2025-10-14 12:28:52,599 [INFO] [MainThread] REQ-16924: Lock acquired after 0.000s — entering SDK operation
 2025-10-14 12:28:52,601 [ERROR] [MainThread] [USB] Initialization failed (code=1)
+2025-12-01 16:38:23,059 [INFO] [MainThread] REQ-20184: Waiting to acquire SDK lock...
+2025-12-01 16:38:23,074 [ERROR] [MainThread] [BUZZER] Activation failed (reader=1, duration=1000ms, code=1)
+2025-12-01 16:38:23,075 [INFO] [MainThread] REQ-20184: Lock acquired after 0.001s — entering SDK operation
+2025-12-01 16:38:23,077 [ERROR] [MainThread] [USB] Initialization failed (code=1)
+2025-12-01 16:46:13,686 [INFO] [MainThread] Received create_card request: {'hotel_id': '75350', 'card_no': '4', 'checkin_time': '03-Dec-2025', 'checkout_time': '04-Dec-2025', 'room_no': [1], 'lock_no': '01000404'}
+2025-12-01 16:46:13,688 [INFO] [MainThread] REQ-23708: Waiting to acquire SDK lock...
+2025-12-01 16:46:13,708 [ERROR] [MainThread] [BUZZER] Activation failed (reader=1, duration=1000ms, code=1)
+2025-12-01 16:46:13,710 [INFO] [MainThread] REQ-23708: Lock acquired after 0.001s — entering SDK operation
+2025-12-01 16:46:13,722 [ERROR] [MainThread] [USB] Initialization failed (code=1)
+2025-12-02 14:50:41,516 [INFO] [MainThread] Received create_card request: {'hotel_id': 75350, 'card_no': 0, 'checkin_time': '03-Dec-2025', 'checkout_time': '03-Dec-2025', 'lock_no': '01000000', 'room_no': 0}
+2025-12-02 14:50:41,518 [INFO] [MainThread] REQ-19348: Waiting to acquire SDK lock...
+2025-12-02 14:50:41,530 [ERROR] [MainThread] [BUZZER] Activation failed (reader=1, duration=1000ms, code=1)
+2025-12-02 14:50:41,531 [INFO] [MainThread] REQ-19348: Lock acquired after 0.001s — entering SDK operation
+2025-12-02 14:50:41,535 [ERROR] [MainThread] [USB] Initialization failed (code=1)
+2025-12-02 14:51:25,791 [INFO] [MainThread] Received create_card request: {'hotel_id': 75350, 'card_no': 0, 'checkin_time': '03-Dec-2025', 'checkout_time': '03-Dec-2025', 'lock_no': '01000000', 'room_no': 0}
+2025-12-02 14:51:25,792 [INFO] [MainThread] Converted checkin_time: 2512030000, checkout_time: 2512030000
+2025-12-02 14:51:25,793 [INFO] [MainThread] REQ-16988: Waiting to acquire SDK lock...
+2025-12-02 14:51:25,801 [ERROR] [MainThread] [BUZZER] Activation failed (reader=1, duration=1000ms, code=1)
+2025-12-02 14:51:25,803 [INFO] [MainThread] REQ-16988: Lock acquired after 0.001s — entering SDK operation
+2025-12-02 14:51:25,808 [ERROR] [MainThread] [USB] Initialization failed (code=1)
+2025-12-02 14:58:39,993 [INFO] [MainThread] Received create_card request: {'hotel_id': 75350, 'card_no': 0, 'checkin_time': '03-Dec-2025', 'checkout_time': '03-Dec-2025', 'lock_no': '01000000', 'room_no': 0}
+2025-12-02 14:58:39,994 [INFO] [MainThread] Converted checkin_time: 2512030000, checkout_time: 2512030000
+2025-12-02 14:58:39,995 [INFO] [MainThread] REQ-11676: Waiting to acquire SDK lock...
+2025-12-02 14:58:39,999 [ERROR] [MainThread] [BUZZER] Activation failed (reader=1, duration=1000ms, code=1)
+2025-12-02 14:58:39,999 [INFO] [MainThread] REQ-11676: Lock acquired after 0.001s — entering SDK operation
+2025-12-02 14:58:40,003 [ERROR] [MainThread] [USB] Initialization failed (code=1)

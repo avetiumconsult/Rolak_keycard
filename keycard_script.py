@@ -228,6 +228,33 @@ def delete_card(hotel_id, card_hex_str):
         logging.error(f"[CARD] Deletion failed (code={res})")
         return {"status": "error", "code": res}
 
+def convertToSdkAcceptedFormat(dateStr, hour = "00", minute = "00"):
+    """Convert date string from "DD-MMM-YYYY" to "YYMMDDHHMM" format.
+    Parameters:
+        dateStr (str): Date string in "DD-MMM-YYYY" format.
+        hour (str): Hour in "HH" format. Default is "00".
+        minute (str): Minute in "MM" format. Default is "00".
+    Returns:
+        str: Date string in "YYMMDDHHMM" format.
+    """
+    day, monthStr, yearFull = dateStr.split("-")
+
+    months = {
+        "Jan": "01", "Feb": "02", "Mar": "03", "Apr": "04",
+        "May": "05", "Jun": "06", "Jul": "07", "Aug": "08",
+        "Sep": "09", "Oct": "10", "Nov": "11", "Dec": "12"
+    }
+
+    # Normalize inputs and ensure zero-padding
+    day = str(day).zfill(2)
+    month_key = monthStr.strip().capitalize()
+    month = months.get(month_key, "01")
+    year = str(yearFull)[-2:]   # 2025 -> "25"
+    hour = str(hour).zfill(2)
+    minute = str(minute).zfill(2)
+
+    return f"{year}{month}{day}{hour}{minute}"
+
 
 # -----------------------------------------------------
 # 6️⃣ API Endpoints with Observability & Locking
@@ -252,13 +279,15 @@ async def api_create_card(request: Request):
             - card_data (str, optional): The encoded card data if successful.
     """
     data = await request.json()
+    logging.info(f"Received create_card request: {data}")
     hotel_id = data.get("hotel_id")
     card_no = data.get("card_no")
-    checkin_time = data.get("checkin_time")
-    checkout_time = data.get("checkout_time")
+    checkin_time = convertToSdkAcceptedFormat(data.get("checkin_time"))
+    checkout_time = convertToSdkAcceptedFormat(data.get("checkout_time"))
     room_no = data.get("room_no")
     lock_No = data.get("lock_no")
 
+    logging.info(f"Converted checkin_time: {checkin_time}, checkout_time: {checkout_time}")
     lock_no = lockstr_to_bytes(lock_No)
 
     if any(x is None for x in [hotel_id, card_no, checkin_time, checkout_time,room_no, lock_no]):
