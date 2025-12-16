@@ -136,10 +136,13 @@ def decode_open_record(card_data):
 @app.post("/create_card")
 async def api_create(req: Request):
     d = await req.json()
+    print(d)
 
     lock_bytes = lockstr_to_bytes(d["lock_no"])
     bdate = convert_date(d["checkin_time"])
     edate = convert_date(d["checkout_time"])
+
+    print(f"Creating card for HotelID {d['hotel_id']}, CardNo {d['card_no']}, LockNo {d['lock_no']}, From {bdate} To {edate}")
 
     with sdk_lock:
         if not init_usb():
@@ -201,28 +204,37 @@ async def api_inspect():
             close_usb()
 
 @app.post("/delete_card")
-async def api_delete(req: Request):
-    d = await req.json()
-
-    rec = cards.find_one({"hotel_id": int(d["hotel_id"])}, sort=[("_id", -1)])
-    if not rec:
-        raise HTTPException(404, "No card found")
-
+async def api_delete():
     with sdk_lock:
         if not init_usb():
             raise HTTPException(500, "USB init failed")
 
         try:
-            res = erase_card(rec["hotel_id"], rec["card_hex"])
+            card_hex = read_card()
+            if not card_hex:
+                raise HTTPException(400, "Failed to read card")
+
+            rec = cards.find_one({"card_hex": card_hex})
+            if not rec:
+                raise HTTPException(404, "Card not found in database")
+
+            res = erase_card(rec["hotel_id"], card_hex)
             buzzer()
+
             if res != 0:
                 raise HTTPException(500, "Erase failed")
-            
-            TOTAL_ROOMS += 1  # 🔧 SAFETY GUARD: NEVER REMOVE
-            
-            return {"status": "success"}
+
+            TOTAL_ROOMS += 1  # advisory counter
+
+            return {
+                "status": "success",
+                "card_no": rec["card_no"],
+                "lock_no": rec["lock_no"]
+            }
+
         finally:
             close_usb()
+
 
 @app.get("/stats")
 async def api_stats():
